@@ -1,0 +1,28 @@
+{
+    "name": "ms-clients",
+    "version": "1.0.0",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "start": "npm run build && node ./dist/main.js",
+        "build": "tsc",
+        "dockerise": "sudo docker build -t ms-clients .",
+        "docker-compose:up": "sudo docker compose up -d",
+        "docker-compose:down": "sudo docker compose down"
+    },
+    "author": "",
+    "license": "ISC",
+    "description": "",
+    "devDependencies": {
+        "@types/express": "^5.0.0",
+        "@types/node": "^22.10.1",
+        "typescript": "^5.7.2"
+    },
+    "dependencies": {
+        "dotenv": "^16.4.7",
+        "express": "^4.21.1",
+        "mysql": "^2.18.1",
+        "reflect-metadata": "^0.2.2",
+        "typeorm": "^0.3.20"
+    }
+}
