@@ -41,7 +41,9 @@ function authMiddleware(req: Request, res: Response, next: NextFunction) {
         });
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ error: error.message });
+        return res
+            .status(500)
+            .json({ error: error.message, originalError: { ...error } });
     }
 }
 
@@ -89,7 +91,10 @@ app.get("/users", async (_req: Request, res: Response) => {
         res.json(data);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({
+            error: error.message,
+            originalError: { ...error },
+        });
     }
 });
 
@@ -105,7 +110,10 @@ app.get("/users/:id", async (req: Request, res: Response) => {
         res.json(data);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({
+            error: error.message,
+            originalError: { ...error },
+        });
     }
 });
 
@@ -125,7 +133,10 @@ app.post("/users", async (req: Request, res: Response) => {
         res.json(data);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({
+            error: error.message,
+            originalError: { ...error },
+        });
     }
 });
 
@@ -145,7 +156,10 @@ app.put("/users/:id", async (req: Request, res: Response) => {
         res.json(data);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({
+            error: error.message,
+            originalError: { ...error },
+        });
     }
 });
 
@@ -166,7 +180,10 @@ app.delete("/users/:id", async (req: Request, res: Response) => {
         res.json(data);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({
+            error: error.message,
+            originalError: { ...error },
+        });
     }
 });
 
@@ -184,7 +201,10 @@ app.post("/tickets", async (req: Request, res: Response) => {
         );
         res.json(data);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({
+            error: error.message,
+            originalError: { ...error },
+        });
     }
 });
 
@@ -200,7 +220,10 @@ app.get("/tickets/:id", async (req: Request, res: Response) => {
         );
         res.json(data);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({
+            error: error.message,
+            originalError: { ...error },
+        });
     }
 });
 
@@ -218,7 +241,10 @@ app.get("/users/:userId/tickets", async (req: Request, res: Response) => {
         res.json(data);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({
+            error: error.message,
+            originalError: { ...error },
+        });
     }
 });
 
@@ -236,7 +262,31 @@ app.get("/products/:productId/tickets", async (req: Request, res: Response) => {
         res.json(data);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({
+            error: error.message,
+            originalError: { ...error },
+        });
+    }
+});
+
+// GET /products/:productId
+app.get("/products/:productId", async (req: Request, res: Response) => {
+    try {
+        const response = await fetch(
+            `${msProductsUrl}/products/${req.params.productId}`
+        );
+        const data = await handleFetchResponse(response);
+        publishMessage(
+            "product-details",
+            JSON.stringify({ productId: req.params.productId, details: data })
+        );
+        res.json(data);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            error: error.message,
+            originalError: { ...error },
+        });
     }
 });
 
@@ -252,7 +302,10 @@ app.get("/products", async (_req: Request, res: Response) => {
         res.json(data);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({
+            error: error.message,
+            originalError: { ...error },
+        });
     }
 });
 
@@ -270,7 +323,10 @@ app.get("/products/category/:category", async (req: Request, res: Response) => {
         res.json(data);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({
+            error: error.message,
+            originalError: { ...error },
+        });
     }
 });
 
@@ -290,7 +346,10 @@ app.post("/products", async (req: Request, res: Response) => {
         res.json(data);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({
+            error: error.message,
+            originalError: { ...error },
+        });
     }
 });
 
@@ -313,7 +372,10 @@ app.put("/products/:id", async (req: Request, res: Response) => {
         res.json(data);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({
+            error: error.message,
+            originalError: { ...error },
+        });
     }
 });
 
@@ -334,7 +396,10 @@ app.post("/login", async (req: Request, res: Response) => {
         res.json({ token });
     } catch (error: any) {
         console.error(error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({
+            error: error.message,
+            originalError: { ...error },
+        });
     }
 });
 
