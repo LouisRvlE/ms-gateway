@@ -1,11 +1,72 @@
-import express, { Request, Response } from "express";
+import express, { Request, Response, NextFunction } from "express";
+import amqp from "amqplib";
+import jwt from "jsonwebtoken";
+import * as dotenv from "dotenv";
+dotenv.config();
+
+const jwtSecret = process.env.JWT_SECRET;
+
+const connectionString = "amqp://rabbitmq";
 
 const app = express();
 app.use(express.json());
 
-const msClientsUrl = "http://localhost:3000";
-const msTicketsUrl = "http://localhost:5000";
-const msProductsUrl = "http://localhost:3004";
+const msClientsUrl = `http://${process.env.SERVER_IP}:3002`;
+const msTicketsUrl = `http://${process.env.SERVER_IP}:5000`;
+const msProductsUrl = `http://${process.env.SERVER_IP}:3004`;
+
+// Middleware pour la vérification du JWT
+function authMiddleware(req: Request, res: Response, next: NextFunction) {
+    try {
+        const authHeader = req.headers["authorization"];
+        if (!authHeader) {
+            return res.status(401).json({ error: "No token provided" });
+        }
+
+        const parts = authHeader.split(" ");
+        if (parts.length !== 2) {
+            return res.status(401).json({ error: "Token error" });
+        }
+
+        const [scheme, token] = parts;
+        if (!/^Bearer$/i.test(scheme)) {
+            return res.status(401).json({ error: "Token malformatted" });
+        }
+
+        jwt.verify(token, jwtSecret as string, (err, decoded) => {
+            if (err) {
+                return res.status(401).json({ error: "Token invalid" });
+            }
+            (req as any).user = decoded; // Stockage des informations du token dans req.user
+            next();
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: error.message });
+    }
+}
+
+// login non pris en compte pour qu'il délivre le token uniquement
+app.use((req, res, next) => {
+    if (req.path === "/login") {
+        return next();
+    }
+    authMiddleware(req, res, next);
+});
+
+const publishMessage = async (queue: string, message: string) => {
+    try {
+        const connection = await amqp.connect(connectionString);
+        const channel = await connection.createChannel();
+        await channel.assertQueue(queue, { durable: false });
+        channel.sendToQueue(queue, Buffer.from(message));
+        console.log(`Message sent to queue ${queue}`);
+    } catch (error) {
+        console.error(
+            new Error("An error occurred while sending the message to rabbitmq")
+        );
+    }
+};
 
 const handleFetchResponse = async (response: globalThis.Response) => {
     if (!response.ok) {
@@ -21,6 +82,7 @@ app.get("/users", async (_req: Request, res: Response) => {
         const data = await handleFetchResponse(response);
         res.json(data);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -31,6 +93,7 @@ app.get("/users/:id", async (req: Request, res: Response) => {
         const data = await handleFetchResponse(response);
         res.json(data);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -43,8 +106,10 @@ app.post("/users", async (req: Request, res: Response) => {
             body: JSON.stringify(req.body),
         });
         const data = await handleFetchResponse(response);
+        publishMessage("user-creation", JSON.stringify(req.body));
         res.json(data);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -57,8 +122,14 @@ app.put("/users/:id", async (req: Request, res: Response) => {
             body: JSON.stringify(req.body),
         });
         const data = await handleFetchResponse(response);
+        publishMessage("user-creation", JSON.stringify(req.body));
+        // publishMessage("user", JSON.stringify({
+        //     ...req.body,
+        //     date: new Date().toISOString(),
+        // }));
         res.json(data);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -69,8 +140,10 @@ app.delete("/users/:id", async (req: Request, res: Response) => {
             method: "DELETE",
         });
         const data = await handleFetchResponse(response);
+        publishMessage("user-creation", JSON.stringify(req.body));
         res.json(data);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -83,8 +156,10 @@ app.post("/tickets", async (req: Request, res: Response) => {
             body: JSON.stringify(req.body),
         });
         const data = await handleFetchResponse(response);
+        publishMessage("user-creation", JSON.stringify(req.body));
         res.json(data);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -95,8 +170,10 @@ app.get("/tickets/:id", async (req: Request, res: Response) => {
             `${msTicketsUrl}/tickets/${req.params.id}`
         );
         const data = await handleFetchResponse(response);
+        publishMessage("user-creation", JSON.stringify(req.body));
         res.json(data);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -107,8 +184,10 @@ app.get("/users/:userId/tickets", async (req: Request, res: Response) => {
             `${msTicketsUrl}/users/${req.params.userId}/tickets`
         );
         const data = await handleFetchResponse(response);
+        publishMessage("user-creation", JSON.stringify(req.body));
         res.json(data);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -119,8 +198,24 @@ app.get("/products/:productId/tickets", async (req: Request, res: Response) => {
             `${msTicketsUrl}/products/${req.params.productId}/tickets`
         );
         const data = await handleFetchResponse(response);
+        publishMessage("user-creation", JSON.stringify(req.body));
         res.json(data);
     } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get("/products/:productId", async (req: Request, res: Response) => {
+    try {
+        const response = await fetch(
+            `${msTicketsUrl}/products/${req.params.productId}`
+        );
+        const data = await handleFetchResponse(response);
+        publishMessage("user-creation", JSON.stringify(req.body));
+        res.json(data);
+    } catch (error) {
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -131,6 +226,7 @@ app.get("/products", async (_req: Request, res: Response) => {
         const data = await handleFetchResponse(response);
         res.json(data);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -143,6 +239,7 @@ app.get("/products/category/:category", async (req: Request, res: Response) => {
         const data = await handleFetchResponse(response);
         res.json(data);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -157,6 +254,7 @@ app.post("/products", async (req: Request, res: Response) => {
         const data = await handleFetchResponse(response);
         res.json(data);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -174,11 +272,27 @@ app.put("/products/:id", async (req: Request, res: Response) => {
         const data = await handleFetchResponse(response);
         res.json(data);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 });
 
-const PORT = 8000;
+app.post("/login", async (req: Request, res: Response) => {
+    const { email, password } = req.body;
+
+    try {
+        const token = jwt.sign(
+            { userId: email, email: password },
+            jwtSecret as string,
+            { expiresIn: "1h" }
+        );
+        res.json({ token });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+const PORT = 3006;
 app.listen(PORT, () => {
     console.log(`Gateway is running on http://localhost:${PORT}`);
 });
