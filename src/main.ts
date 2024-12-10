@@ -14,7 +14,6 @@ const msClientsUrl = `http://${process.env.SERVER_IP}:3002`;
 const msTicketsUrl = `http://${process.env.SERVER_IP}:5000`;
 const msProductsUrl = `http://${process.env.SERVER_IP}:3004`;
 
-// Middleware pour la vérification du JWT
 function authMiddleware(req: Request, res: Response, next: NextFunction) {
     try {
         const authHeader = req.headers["authorization"];
@@ -36,7 +35,6 @@ function authMiddleware(req: Request, res: Response, next: NextFunction) {
             if (err) {
                 return res.status(401).json({ error: "Token invalid" });
             }
-            (req as any).user = decoded; // Stockage des informations du token dans req.user
             next();
         });
     } catch (error) {
@@ -47,7 +45,6 @@ function authMiddleware(req: Request, res: Response, next: NextFunction) {
     }
 }
 
-// Exclusion de /login pour ne pas vérifier le JWT
 app.use((req, res, next) => {
     if (req.path === "/login") {
         return next();
@@ -77,9 +74,6 @@ const handleFetchResponse = async (response: globalThis.Response) => {
     return response.json();
 };
 
-// Routes
-
-// GET /users
 app.get("/users", async (_req: Request, res: Response) => {
     try {
         const response = await fetch(`${msClientsUrl}/users`);
@@ -98,7 +92,6 @@ app.get("/users", async (_req: Request, res: Response) => {
     }
 });
 
-// GET /users/:id
 app.get("/users/:id", async (req: Request, res: Response) => {
     try {
         const response = await fetch(`${msClientsUrl}/users/${req.params.id}`);
@@ -117,7 +110,6 @@ app.get("/users/:id", async (req: Request, res: Response) => {
     }
 });
 
-// POST /users
 app.post("/users", async (req: Request, res: Response) => {
     try {
         const response = await fetch(`${msClientsUrl}/users`, {
@@ -140,7 +132,6 @@ app.post("/users", async (req: Request, res: Response) => {
     }
 });
 
-// PUT /users/:id
 app.put("/users/:id", async (req: Request, res: Response) => {
     try {
         const response = await fetch(`${msClientsUrl}/users/${req.params.id}`, {
@@ -163,7 +154,6 @@ app.put("/users/:id", async (req: Request, res: Response) => {
     }
 });
 
-// DELETE /users/:id
 app.delete("/users/:id", async (req: Request, res: Response) => {
     try {
         const response = await fetch(`${msClientsUrl}/users/${req.params.id}`, {
@@ -227,7 +217,6 @@ app.get("/tickets/:id", async (req: Request, res: Response) => {
     }
 });
 
-// GET /users/:userId/tickets
 app.get("/users/:userId/tickets", async (req: Request, res: Response) => {
     try {
         const response = await fetch(
@@ -248,7 +237,6 @@ app.get("/users/:userId/tickets", async (req: Request, res: Response) => {
     }
 });
 
-// GET /products/:productId/tickets
 app.get("/products/:productId/tickets", async (req: Request, res: Response) => {
     try {
         const response = await fetch(
@@ -269,7 +257,6 @@ app.get("/products/:productId/tickets", async (req: Request, res: Response) => {
     }
 });
 
-// GET /products/:productId
 app.get("/products/:productId", async (req: Request, res: Response) => {
     try {
         const response = await fetch(
@@ -290,7 +277,6 @@ app.get("/products/:productId", async (req: Request, res: Response) => {
     }
 });
 
-// GET /products
 app.get("/products", async (_req: Request, res: Response) => {
     try {
         const response = await fetch(`${msProductsUrl}/products`);
@@ -309,7 +295,6 @@ app.get("/products", async (_req: Request, res: Response) => {
     }
 });
 
-// GET /products/category/:category
 app.get("/products/category/:category", async (req: Request, res: Response) => {
     try {
         const response = await fetch(
@@ -330,7 +315,6 @@ app.get("/products/category/:category", async (req: Request, res: Response) => {
     }
 });
 
-// POST /products
 app.post("/products", async (req: Request, res: Response) => {
     try {
         const response = await fetch(`${msProductsUrl}/products`, {
@@ -353,7 +337,6 @@ app.post("/products", async (req: Request, res: Response) => {
     }
 });
 
-// PUT /products/:id
 app.put("/products/:id", async (req: Request, res: Response) => {
     try {
         const response = await fetch(
@@ -379,7 +362,6 @@ app.put("/products/:id", async (req: Request, res: Response) => {
     }
 });
 
-// POST /login
 app.post("/login", async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
@@ -403,7 +385,6 @@ app.post("/login", async (req: Request, res: Response) => {
     }
 });
 
-// Démarrage du serveur
 const PORT = 3006;
 app.listen(PORT, () => {
     console.log(`Gateway is running on http://localhost:${PORT}`);
