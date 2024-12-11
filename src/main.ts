@@ -198,6 +198,24 @@ app.post("/tickets", async (req: Request, res: Response) => {
     }
 });
 
+app.get("/tickets", async (_req: Request, res: Response) => {
+    try {
+        const response = await fetch(`${msTicketsUrl}/tickets`);
+        const data = await handleFetchResponse(response);
+        publishMessage(
+            "ticket-list",
+            JSON.stringify({ date: new Date().toISOString(), tickets: data })
+        );
+        res.json(data);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            error: error.message,
+            originalError: { ...error },
+        });
+    }
+});
+
 app.get("/tickets/:id", async (req: Request, res: Response) => {
     try {
         const response = await fetch(
